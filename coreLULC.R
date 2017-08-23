@@ -38,6 +38,62 @@ lulc_bricks[[i]] = brick(lulc_stack[[i]])
 }
 
 
+
+####calculating this shit based on coordinates rather than polygons
+
+lakes = md$lake.id
+lakenames = md$Lake.Name
+# Create output dataframe 
+dates<-seq.Date(as.Date('1770-01-01'),as.Date('2007-01-01'),by = 'year')
+
+output_list<-list(
+  output_C3crop = data.frame(date =dates),
+  output_C4crop = data.frame(date =dates),
+  output_C3past = data.frame(date =dates),
+  output_C4past = data.frame(date =dates),
+  output_Urban = data.frame(date =dates))
+
+# Pull data monthly from 1750-2016
+for (j in 1:length(varnames)){
+  for (m in 1:length(dates)) {
+    print(m)
+    #have to get rid of the 0-360 longitude with rotate
+    month = rotate(lulc_bricks[[j]][[m]])
+    
+    vals = getValues(month)
+    coord <- xyFromCell(month,1:ncell(month))
+    month <- cbind(coord,vals)
+    
+    # Loop through lakes 
+    for (i in 1:length(lakes)){
+      indx = which(md$lake.id %in% lakes[i])
+      lat = md$`Latitude`[indx]
+      long = md$`Longitude`[indx]
+      
+      df = month[which(abs(month[,1] - long) <=0.5 & abs(month[,2] - lat) <=0.5),]
+      if (length(df) == 3){
+        output_list[[j]][m,i+1] = df[3]
+      } else {
+        output_list[[j]][m,i+1] = mean(df[,3],na.rm=T)
+      }
+    }
+  }
+}
+
+for (j in 1:length(varnames)){
+  names(output_list[[j]])[-1] = paste(lakenames, lakes, sep="_") # add column names of lakes 
+}
+
+for (j in 1:length(varnames)){
+  # Write output file 
+  write.csv(output_list[[j]],paste('data/',"core_LULC_",varnames[j],".csv", sep=""),row.names=F,quote=F)
+}
+
+
+
+
+
+#shapefile based analysis, #not working quite right#
 #import shapefiles and bind them together
 #need to decide if you really want to use mercator projection
 lake_shpfiles<-list.files(path="data/Shapefiles",pattern=".shp$")
@@ -120,64 +176,3 @@ write.csv(output,'data/coreTemps_Berkeley.csv',row.names=F,quote=F)
 
 
 
-####calculating this shit based on coordinates rather than polygons
-
-lakes = md$lake.id
-lakenames = md$Lake.Name
-# Create output dataframe 
-dates<-seq.Date(as.Date('1770-01-01'),as.Date('2007-01-01'),by = 'year')
-
-output_list<-list(
-output_C3crop = data.frame(date =dates),
-output_C4crop = data.frame(date =dates),
-output_C3past = data.frame(date =dates),
-output_C4past = data.frame(date =dates),
-output_Urban = data.frame(date =dates))
-
-# Pull data monthly from 1750-2016
-for (j in 1:length(varnames)){
-  for (m in 1:length(dates)) {
-  print(m)
-  #have to get rid of the 0-360 longitude with rotate
-  month = rotate(lulc_bricks[[j]][[m]])
-  
-  vals = getValues(month)
-  coord <- xyFromCell(month,1:ncell(month))
-  month <- cbind(coord,vals)
-  
-  # Loop through lakes 
-  for (i in 1:length(lakes)){
-    indx = which(md$lake.id %in% lakes[i])
-    lat = md$`Latitude`[indx]
-    long = md$`Longitude`[indx]
-    
-    df = month[which(abs(month[,1] - long) <=0.5 & abs(month[,2] - lat) <=0.5),]
-    if (length(df) == 3){
-      output_list[[j]][m,i+1] = df[3]
-    } else {
-      output_list[[j]][m,i+1] = mean(df[,3],na.rm=T)
-    }
-  }
-  }
-}
-
-for (j in 1:length(varnames)){
-names(output_list[[j]])[-1] = paste(lakenames, lakes, sep="_") # add column names of lakes 
-}
-
-for (j in 1:length(varnames)){
-# Write output file 
-write.csv(output_list[[j]],paste('data/',"core_LULC_",varnames[j],".csv", sep=""),row.names=F,quote=F)
-}
-
-
-
-
-
-plot(shape_file_list[[2]], add=T,lwd=100, col="red")
-plot(lulc_bricks[[1]][[1]])
-
-proj4string(year)
-plot(spTransform(buffers_1000_list[[i]], proj4string(year)), add=T)
-
-plot(year, xlim=c(-10,10), ylim=c(30,50))
