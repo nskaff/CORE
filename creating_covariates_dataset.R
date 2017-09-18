@@ -2,14 +2,18 @@
 library(dplyr)
 library(lubridate)
 library(tidyr)
+library(googlesheets)
+library(mapview)
 
 #loading in data with z-score
 my_sheets <- gs_ls() #Will have to authenticate Google here (in browser, very easy)
 core <- gs_title("z_score_data") #get whole document
 z_scores <- core %>% gs_read_csv(ws = "Sheet1") #work with individual worksheet
 
+z_scores$Lake.ID<-as.character(z_scores$Lake.ID)
 
-temp_covs<-read.csv('data/coreTemps_Berkeley_8_27.csv', header=T)
+
+temp_covs<-read.csv('data/coreTemps_Berkeley_9_18.csv', header=T)
 temp_covs$date<-as.Date(temp_covs$date)
 c3crop<-read.csv("data/core_LULC_C3crop.csv", header=T)
 c4crop<-read.csv("data/core_LULC_C4crop.csv", header=T)
@@ -21,7 +25,7 @@ urban<-read.csv("data/core_LULC_Urban.csv", header=T)
 temp_covs1<-aggregate(.~year(date),data=temp_covs, FUN=mean, na.action=na.pass)
 
 colnames(temp_covs1)[1]<-"year"
-temp_covs2<-temp_covs1[,c(-2,-3)]
+temp_covs2<-temp_covs1[,c(-2)]
 
 #converting temperature to vertical format
 temp_covs3<-temp_covs2 %>% gather(key=year)
@@ -70,6 +74,19 @@ colnames(urban1)[3]<-"%urban"
 urban1$Lake.ID<-gsub("X","",urban1$Lake.ID)
 covar_data<-full_join(covar_data,urban1,by=c("Lake.ID", "year") )
 
+covar_data[,"%total_crop"]<-(covar_data$`%c3crop`+covar_data$`%c4crop`)
+
+covar_data[,"%total_past"]<-(covar_data$`%c3past`+covar_data$`%c4past`)
+
+
 #adding z-score data
 covar_data<-full_join(covar_data, z_scores, by=c("year", "Lake.ID"))
+
+#removing years before 1850 and lakes without a Z score marked with X
+covar_data1<-covar_data[covar_data$year>=1850 & covar_data$Lake.ID %in% as.character(md$Lake.ID[md$'Z Score'=="X"]),]
+
+#testing to see if all years included
+tapply(covar_data1$year, covar_data1$Lake.ID, function(x){length(x)})
+
+write.csv(covar_data1, "data/covariates_data_9_16_17.csv", row.names=F)
 

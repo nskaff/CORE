@@ -53,7 +53,9 @@ for (j in 1:length(varnames)){
     print(m)
     #have to get rid of the 0-360 longitude with rotate
     month = rotate(lulc_bricks[[j]][[m]])
-    vals<-raster::extract(month, SpatialPoints(md[!is.na(md$'Latitude.(dec.deg)'),c("Longitude.(dec.deg)","Latitude.(dec.deg)")]))
+     vals<-raster::extract(month, SpatialPoints(md[!is.na(md$'Latitude.(dec.deg)'),c("Longitude.(dec.deg)","Latitude.(dec.deg)")], proj4string = CRS(proj4string(lulc_bricks[[1]][[200]]))))
+    
+    vals<-raster::extract(month, SpatialPoints(md[3,c("Longitude.(dec.deg)","Latitude.(dec.deg)")],proj4string = CRS(proj4string(lulc_bricks[[1]][[200]]))), buffer=10000)
     output_list[[j]][m,1]<-as.character(dates[m])
     output_list[[j]][m,2:(length(vals)+1)] <- t(vals)
     
@@ -79,86 +81,86 @@ for (j in 1:length(varnames)){
 
 
 
-#shapefile based analysis, #not working quite right#
-#import shapefiles and bind them together
-#need to decide if you really want to use mercator projection
-lake_shpfiles<-list.files(path="data/Shapefiles",pattern=".shp$")
-lake_filenames<-sub(".shp","",lake_shpfiles)
-
-#problem where some of the shapefiles are missing a project. need to define them.
-proj_example<-readOGR(dsn="data/Shapefiles/",layer="Aguasverdes_Spain")
-shape_file_list<-list()
-for(i in 1:length(lake_filenames)){
-  shape_file_list[[i]]<-readOGR(dsn="data/Shapefiles/",layer=lake_filenames[i], p4s = proj4string(proj_example))
-  
-}
-
-
-buffers_1000_list<-list()
-buffers_500_list<-list()
-for (i in 1:length(lake_filenames)){
-  #buffering in meters
-  buffer_1000<-gBuffer(shape_file_list[[i]], width=1000, quadsegs=100)
-
-  buffer_500<-gBuffer(shape_file_list[[i]], width=1000, quadsegs=100)
-
-  #removing lake area
-  buffers_1000_list[[i]]<-erase(buffer_1000, shape_file_list[[i]])
-  buffers_500_list[[i]]<-erase(buffer_500, shape_file_list[[i]])
-
-}
-
-# #merging all the shapefiles together
-# combined_shp<-shape_file_list[[1]]
-# for (i in 2:length(lake_filenames)){
-#   combined_shp<-union(combined_shp,shape_file_list[[i]])
-#   print(i)
-#   print(nrow(combined_shp))
+# #shapefile based analysis, #not working quite right#
+# #import shapefiles and bind them together
+# #need to decide if you really want to use mercator projection
+# lake_shpfiles<-list.files(path="data/Shapefiles",pattern=".shp$")
+# lake_filenames<-sub(".shp","",lake_shpfiles)
+# 
+# #problem where some of the shapefiles are missing a project. need to define them.
+# proj_example<-readOGR(dsn="data/Shapefiles/",layer="Aguasverdes_Spain")
+# shape_file_list<-list()
+# for(i in 1:length(lake_filenames)){
+#   shape_file_list[[i]]<-readOGR(dsn="data/Shapefiles/",layer=lake_filenames[i], p4s = proj4string(proj_example))
+#   
 # }
 # 
 # 
-# #creating buffers around each shapefile and removing the lake itself
-# buffer_1000_full <- gBuffer(combined_shp, width=1000, quadsegs=100,byid=T, id = )
-# buffer_500_full <- gBuffer(combined_shp, width=500, quadsegs=100,byid=T)
-# #
-# #
-# buffer_1000<-erase(buffer_1000_full, combined_shp,byid=T) # using raster:erase
-# buffer_500<-erase(buffer_500_full, combined_shp,byid=T)
+# buffers_1000_list<-list()
+# buffers_500_list<-list()
+# for (i in 1:length(lake_filenames)){
+#   #buffering in meters
+#   buffer_1000<-gBuffer(shape_file_list[[i]], width=1000, quadsegs=100)
 # 
-
-
-lakes = md$lake.id
-lakenames = md$Lake.Name
-# Create output dataframe 
-dates<-seq.Date(as.Date('1770-01-01'),as.Date('2007-01-01'),by = 'year')
-
-
-output = data.frame(date =dates)
-
-.rs.unloadPackage("tidyr")
-
-# Pull data yearly from 1770-2007
-for (i in 1:length(varnames)){
-  for (m in 1:length(dates)) {
-  print(m)
-  year = rotate(lulc_bricks[[i]][[m]])
-  
-  vals_1000 = extract(year, buffers_1000_list[[i]])
-  vals_500= extract(year, buffers_500_list[[i]])
-  print(vals_1000)
-  print(vals_500)
-  #unlist(lapply(vals_500, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
-  
-  
-  #output[m,]
-  }  
-
-}
-names(output)[-c(1:2)] = paste(lakenames, lakes, sep="_") # add column names of lakes 
-
-# Write output file 
-write.csv(output,'data/coreTemps_Berkeley.csv',row.names=F,quote=F)
-
-
-
-
+#   buffer_500<-gBuffer(shape_file_list[[i]], width=1000, quadsegs=100)
+# 
+#   #removing lake area
+#   buffers_1000_list[[i]]<-erase(buffer_1000, shape_file_list[[i]])
+#   buffers_500_list[[i]]<-erase(buffer_500, shape_file_list[[i]])
+# 
+# }
+# 
+# # #merging all the shapefiles together
+# # combined_shp<-shape_file_list[[1]]
+# # for (i in 2:length(lake_filenames)){
+# #   combined_shp<-union(combined_shp,shape_file_list[[i]])
+# #   print(i)
+# #   print(nrow(combined_shp))
+# # }
+# # 
+# # 
+# # #creating buffers around each shapefile and removing the lake itself
+# # buffer_1000_full <- gBuffer(combined_shp, width=1000, quadsegs=100,byid=T, id = )
+# # buffer_500_full <- gBuffer(combined_shp, width=500, quadsegs=100,byid=T)
+# # #
+# # #
+# # buffer_1000<-erase(buffer_1000_full, combined_shp,byid=T) # using raster:erase
+# # buffer_500<-erase(buffer_500_full, combined_shp,byid=T)
+# # 
+# 
+# 
+# lakes = md$lake.id
+# lakenames = md$Lake.Name
+# # Create output dataframe 
+# dates<-seq.Date(as.Date('1770-01-01'),as.Date('2007-01-01'),by = 'year')
+# 
+# 
+# output = data.frame(date =dates)
+# 
+# .rs.unloadPackage("tidyr")
+# 
+# # Pull data yearly from 1770-2007
+# for (i in 1:length(varnames)){
+#   for (m in 1:length(dates)) {
+#   print(m)
+#   year = rotate(lulc_bricks[[i]][[m]])
+#   
+#   vals_1000 = extract(year, buffers_1000_list[[i]])
+#   vals_500= extract(year, buffers_500_list[[i]])
+#   print(vals_1000)
+#   print(vals_500)
+#   #unlist(lapply(vals_500, function(x) if (!is.null(x)) mean(x, na.rm=TRUE) else NA ))
+#   
+#   
+#   #output[m,]
+#   }  
+# 
+# }
+# names(output)[-c(1:2)] = paste(lakenames, lakes, sep="_") # add column names of lakes 
+# 
+# # Write output file 
+# write.csv(output,'data/coreTemps_Berkeley.csv',row.names=F,quote=F)
+# 
+# 
+# 
+# 

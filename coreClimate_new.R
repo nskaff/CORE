@@ -31,7 +31,7 @@ for (m in 1:length(dates)) {
   print(m)
   month = br[[m]] #choose month/year
   month@file@nodatavalue<--999
-  vals<-raster::extract(month, SpatialPoints(md[!is.na(md$'Latitude.(dec.deg)'),c("Longitude.(dec.deg)","Latitude.(dec.deg)")]))
+  vals<-raster::extract(month, SpatialPoints(md[!is.na(md$'Latitude.(dec.deg)'),c("Longitude.(dec.deg)","Latitude.(dec.deg)")], proj4string = CRS(proj4string(lulc_bricks[[1]][[200]]))))
   output[m,1]<-as.character(dates[m])
   output[m,2:(length(vals)+1)]<-t(vals)
 }
@@ -43,7 +43,7 @@ for (i in 2:length(output)){
 }
 
 # Write output file 
-write.csv(output,'data/coreTemps_Berkeley_8_27.csv',row.names=F)
+write.csv(output,'data/coreTemps_Berkeley_9_18.csv',row.names=F)
 
 #####
 # Global surface temperature data:  CRUTEM4
