@@ -39,37 +39,62 @@ lulc_bricks[[i]] = brick(lulc_stack[[i]])
 ####calculating this shit based on coordinates rather than polygons
 
 # Create output dataframe 
+
 dates<-seq.Date(as.Date('1770-01-01'),as.Date('2007-01-01'),by = 'year')
 
 output_list<-list(
-  output_C3crop = matrix(nrow=length(dates), ncol=nrow(md[!is.na(md$'Latitude.(dec.deg)'),])+1),
-  output_C4crop = matrix(nrow=length(dates), ncol=nrow(md[!is.na(md$'Latitude.(dec.deg)'),])+1),
-  output_C3past = matrix(nrow=length(dates), ncol=nrow(md[!is.na(md$'Latitude.(dec.deg)'),])+1),
-  output_C4past = matrix(nrow=length(dates), ncol=nrow(md[!is.na(md$'Latitude.(dec.deg)'),])+1),
-  output_Urban = matrix(nrow=length(dates), ncol=nrow(md[!is.na(md$'Latitude.(dec.deg)'),])+1))
+    output_C3crop = matrix(nrow=length(dates), ncol=nrow(md[!is.na(md$'Latitude.(dec.deg)'),])+1),
+    output_C4crop = matrix(nrow=length(dates), ncol=nrow(md[!is.na(md$'Latitude.(dec.deg)'),])+1),
+    output_C3past = matrix(nrow=length(dates), ncol=nrow(md[!is.na(md$'Latitude.(dec.deg)'),])+1),
+    output_C4past = matrix(nrow=length(dates), ncol=nrow(md[!is.na(md$'Latitude.(dec.deg)'),])+1),
+    output_Urban = matrix(nrow=length(dates), ncol=nrow(md[!is.na(md$'Latitude.(dec.deg)'),])+1))
 
+  for (j in 1:length(varnames)){
+    for (m in 1:length(dates)) {
+        print(m)
+        #have to get rid of the 0-360 longitude with rotate
+          month = rotate(lulc_bricks[[j]][[m]])
+          vals<-raster::extract(month, SpatialPoints(md[!is.na(md$'Latitude.(dec.deg)'),c("Longitude.(dec.deg)","Latitude.(dec.deg)")]))
+          output_list[[j]][m,1]<-as.character(dates[m])
+          output_list[[j]][m,2:(length(vals)+1)] <- t(vals)
+          
+          }
+    }
+
+
+
+
+#calculating value of non-NA pixel nearest to points in order to fill in lakes with missing values
 for (j in 1:length(varnames)){
   for (m in 1:length(dates)) {
-    print(m)
-    #have to get rid of the 0-360 longitude with rotate
-    month = rotate(lulc_bricks[[j]][[m]])
-     vals<-raster::extract(month, SpatialPoints(md[!is.na(md$'Latitude.(dec.deg)'),c("Longitude.(dec.deg)","Latitude.(dec.deg)")], proj4string = CRS(proj4string(lulc_bricks[[1]][[200]]))))
-    
-    vals<-raster::extract(month, SpatialPoints(md[3,c("Longitude.(dec.deg)","Latitude.(dec.deg)")],proj4string = CRS(proj4string(lulc_bricks[[1]][[200]]))), buffer=10000)
-    output_list[[j]][m,1]<-as.character(dates[m])
-    output_list[[j]][m,2:(length(vals)+1)] <- t(vals)
-    
-  }
+  
+xy <- md[!is.na(md$'Latitude.(dec.deg)'),c("Longitude.(dec.deg)","Latitude.(dec.deg)")]
+
+#enter all the lakes where you want to take the nearest pixel
+xy<-xy[c(3,4,105),]
+
+r <- rotate(lulc_bricks[[j]][[m]])
+
+na_vals = apply(X = xy, MARGIN = 1, FUN = function(xy) r@data@values[which.min(replace(distanceFromPoints(r, xy), is.na(r), NA))])
+
+#enter all the lakes where you want to take the nearest pixel
+# output_list[[j]][,c(3+1, 4+1, 105+1)]<-as.numeric(output_list[[j]][,c(3+1, 4+1, 105+1)])
+output_list[[j]][m,c(3+1, 4+1, 105+1)] = t(na_vals)
+ print(m) 
 }
+}
+
+
 
 for (j in 1:length(varnames)){
   output_list[[j]]<-data.frame(output_list[[j]])
   for (i in 1:length(vals)){
-colnames(output_list[[j]])[1]<-"date"
-colnames(output_list[[j]])[i+1]<-data.frame(md[!is.na(md$'Latitude.(dec.deg)'),"Lake.ID"])[i,]
-
+    colnames(output_list[[j]])[1]<-"date"
+    colnames(output_list[[j]])[i+1]<-data.frame(md[!is.na(md$'Latitude.(dec.deg)'),"Lake.ID"])[i,]
+    
   }
 }
+
 
 
 for (j in 1:length(varnames)){

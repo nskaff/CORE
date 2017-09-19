@@ -13,7 +13,7 @@ z_scores <- core %>% gs_read_csv(ws = "Sheet1") #work with individual worksheet
 z_scores$Lake.ID<-as.character(z_scores$Lake.ID)
 
 
-temp_covs<-read.csv('data/coreTemps_Berkeley_9_18.csv', header=T)
+temp_covs<-read.csv('data/coreTemps_Berkeley_9_19.csv', header=T)
 temp_covs$date<-as.Date(temp_covs$date)
 c3crop<-read.csv("data/core_LULC_C3crop.csv", header=T)
 c4crop<-read.csv("data/core_LULC_C4crop.csv", header=T)
@@ -88,5 +88,5 @@ covar_data1<-covar_data[covar_data$year>=1850 & covar_data$Lake.ID %in% as.chara
 #testing to see if all years included
 tapply(covar_data1$year, covar_data1$Lake.ID, function(x){length(x)})
 
-write.csv(covar_data1, "data/covariates_data_9_16_17.csv", row.names=F)
+write.csv(covar_data1, "data/covariates_data_9_19_17.csv", row.names=F)
 

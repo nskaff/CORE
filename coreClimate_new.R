@@ -36,6 +36,26 @@ for (m in 1:length(dates)) {
   output[m,2:(length(vals)+1)]<-t(vals)
 }
 
+#filling in data for lake 105 in turkey that falls outside of the temp raster. identifying the closet pixel to this lake and attributing that temp data
+#starting at 1850
+  for (m in 1201:length(dates)) {
+    
+    xy <- md[!is.na(md$'Latitude.(dec.deg)'),c("Longitude.(dec.deg)","Latitude.(dec.deg)")]
+    
+    #enter all the lakes where you want to take the nearest pixel
+    xy<-xy[c(105),]
+    
+    r <-  br[[m]]
+    
+    na_vals = apply(X = xy, MARGIN = 1, FUN = function(xy) getValues(r)[which.min(replace(distanceFromPoints(r, xy), is.na(r), NA))])
+    
+    #enter all the lakes where you want to take the nearest pixel
+    # output_list[[j]][,c(3+1, 4+1, 105+1)]<-as.numeric(output_list[[j]][,c(3+1, 4+1, 105+1)])
+    output[m,c(105+1)] = na_vals
+    print(m) 
+  }
+
+
 output<-data.frame(output)
 colnames(output)[1]<-"date"
 for (i in 2:length(output)){
@@ -43,7 +63,7 @@ for (i in 2:length(output)){
 }
 
 # Write output file 
-write.csv(output,'data/coreTemps_Berkeley_9_18.csv',row.names=F)
+write.csv(output,'data/coreTemps_Berkeley_9_19.csv',row.names=F)
 
 #####
 # Global surface temperature data:  CRUTEM4
