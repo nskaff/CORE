@@ -95,5 +95,5 @@ covar_data2<-full_join(covar_data1,md[,c(1,15,19,20,21,22)], by=c("Lake.ID"))
 #testing to see if all years included
 tapply(covar_data1$year, covar_data1$Lake.ID, function(x){length(x)})
 
-write.csv(covar_data1, "data/covariates_data_9_19_17.csv", row.names=F)
+write.csv(covar_data1, "data/covariates_data_10_27_17.csv", row.names=F)
 
