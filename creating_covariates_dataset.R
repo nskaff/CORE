@@ -12,6 +12,9 @@ z_scores <- core %>% gs_read_csv(ws = "Sheet1") #work with individual worksheet
 
 z_scores$Lake.ID<-as.character(z_scores$Lake.ID)
 
+#loading data template
+core <- gs_title("Datatemplate_CORE_Variables") #get whole document
+md <- core %>% gs_read_csv(ws = "Sheet1") #work with individual worksheet
 
 temp_covs<-read.csv('data/coreTemps_Berkeley_9_19.csv', header=T)
 temp_covs$date<-as.Date(temp_covs$date)
@@ -78,12 +81,16 @@ covar_data[,"%total_crop"]<-(covar_data$`%c3crop`+covar_data$`%c4crop`)
 
 covar_data[,"%total_past"]<-(covar_data$`%c3past`+covar_data$`%c4past`)
 
-
+z_scores$Lake.ID<-as.character(z_scores$Lake.ID)
 #adding z-score data
 covar_data<-full_join(covar_data, z_scores, by=c("year", "Lake.ID"))
 
 #removing years before 1850 and lakes without a Z score marked with X
-covar_data1<-covar_data[covar_data$year>=1850 & covar_data$Lake.ID %in% as.character(md$Lake.ID[md$'Z Score'=="X"]),]
+covar_data1<-covar_data[covar_data$year>=1850 & covar_data$Lake.ID %in% as.character(md$Lake.ID[md$'Included in model'=="y"]),]
+
+#adding in method, area, lat/long, elevation,
+md$Lake.ID<-as.character(md$Lake.ID)
+covar_data2<-full_join(covar_data1,md[,c(1,15,19,20,21,22)], by=c("Lake.ID"))
 
 #testing to see if all years included
 tapply(covar_data1$year, covar_data1$Lake.ID, function(x){length(x)})

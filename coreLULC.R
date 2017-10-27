@@ -15,12 +15,9 @@ library(rgeos)
 
 ##### Get Google Docs master info from web #####
 my_sheets <- gs_ls() #Will have to authenticate Google here (in browser, very easy)
-core <- gs_title("Dataset_covariates") #get whole document
-md_import <- core %>% gs_read_csv(ws = "Sheet1") #work with individual worksheet
-#create unique ID for lakes
-md1<-md_import %>% mutate(lake.id = group_indices_(md_import, .dots=c("Lake.Name", "Country", "Latitude", "Longitude")))
+core <- gs_title("Datatemplate_CORE_Variables") #get whole document
+md <- core %>% gs_read_csv(ws = "Sheet1") 
 
-md<-md1[!duplicated(md1[,c("Lake.Name","lake.id","Country","Area", "Latitude", "Longitude", "Elevation")]),c("Lake.Name","lake.id","Country","Area", "Latitude", "Longitude", "Elevation")]
 
 #importing land use
 lulc_files<-list.files("data/RF_AREAVEG", pattern='*.nc', full.names=TRUE)
@@ -41,7 +38,7 @@ lulc_bricks[[i]] = brick(lulc_stack[[i]])
 
 ####calculating this shit based on coordinates rather than polygons
 
-lakes = md$lake.id
+lakes = md$Lake.ID
 lakenames = md$Lake.Name
 # Create output dataframe 
 dates<-seq.Date(as.Date('1770-01-01'),as.Date('2007-01-01'),by = 'year')
@@ -66,9 +63,9 @@ for (j in 1:length(varnames)){
     
     # Loop through lakes 
     for (i in 1:length(lakes)){
-      indx = which(md$lake.id %in% lakes[i])
-      lat = md$`Latitude`[indx]
-      long = md$`Longitude`[indx]
+      indx = which(md$Lake.ID %in% lakes[i])
+      lat = md$`Latitude.(dec.deg)`[indx]
+      long = md$`Longitude.(dec.deg)`[indx]
       
       df = month[which(abs(month[,1] - long) <=0.5 & abs(month[,2] - lat) <=0.5),]
       if (length(df) == 3){

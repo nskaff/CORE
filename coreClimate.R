@@ -53,13 +53,3 @@ names(output)[-c(1:2)] = paste(lakenames, lakes, sep="_") # add column names of 
 
 # Write output file 
 write.csv(output,'data/coreTemps_Berkeley.csv',row.names=F,quote=F)
-
-#####
-# Global surface temperature data:  CRUTEM4
-# Years of Record: 1850/01 to 2016/07
-
-br1 = brick('data/air.mon.anom.nc', varname="air")
-plot(br1[[1]])
-#much worse coverage than Berkeley
-
-
